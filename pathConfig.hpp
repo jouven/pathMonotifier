@@ -13,7 +13,7 @@ class textCompilation_c;
 class pathConfig_c
 {
     QString path_pri;
-    int_fast64_t monitorIntervalMilliseconds_pri = -1;
+    int_fast64_t monitorIntervalMilliseconds_pri = 1000;
 
 public:
     enum class changeToMonitor_ec
@@ -29,6 +29,8 @@ public:
         , hashChange = 5
         //to detect end of transfer situations like copy, move, detecting when a video recording ends
         , newFileFinishedLoading = 6
+        //same as above but without requiring the file to be new
+        , fileFinishedLoading = 7
         //as I mentioned in the fileState_c class file shrinking is not a thing, (AFAIK actonQtg is the only program with that kind of move mechanics)
         //the other side of the newFileStoppedGrowing, i.e., a file being transfered away
         //, fileShrinkingDeleted = 7
@@ -60,6 +62,7 @@ private:
     //using it on >1 path configs happening on the same device will destroy that device performance while the scans happen and these scans will be slower
     //also factor in if hash change is required, because it forces full file readings to generate hash/s
     bool threadFileSystemScan_pri = false;
+    QString separator_pri = " | ";
 public:
     static const QMap<QString, changeToMonitor_ec> strToChangeToMonitorMap_sta_con;
     static const std::unordered_map<changeToMonitor_ec, QString> changeToMonitorToStrUMap_sta_con;
@@ -79,11 +82,12 @@ public:
             , const bool passNotificationTextAsArgument_par_con
             , const QString& dateTimeFormat_par_con
             , const bool UTC_par_con
-            , const bool threadFileSystemScan_par_con);
+            , const bool threadFileSystemScan_par_con
+            , const QString separator_par_con);
 
     void read_f(const QJsonObject &json_par_con);
     //void write_f(QJsonObject &json_par) const;
-    static void writeJSONDocumented_f(QJsonObject& json_par);
+    void writeJSONDocumented_f(QJsonObject& json_par);
     //check if this pathConfig_c object is usable to start monitoring, e.g., path exists, there is at least one change to monitor, there is at least one notification type and so on
     //pass errorsPtr_par argument to get the error texts
     bool isValid_f(textCompilation_c* errorsPtr_par = nullptr) const;
@@ -100,6 +104,7 @@ public:
     bool UTC_f() const;
     bool threadFileSystemScan_f() const;
     bool passNotificationTextAsArgument_f() const;
+    QString separator_f() const;
 };
 
 #endif // PATHMONOTIFIER_PATHCONFIG_HPP

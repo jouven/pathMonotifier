@@ -45,7 +45,8 @@ void appConfig_c::writeJSONDocumented_f(QJsonObject& json_par) const
 {
     QJsonArray jsonArrayFileDialongSettingsTmp;
     QJsonObject jsonObjectTmp;
-    pathConfig_c::writeJSONDocumented_f(jsonObjectTmp);
+    pathConfig_c empty;
+    empty.writeJSONDocumented_f(jsonObjectTmp);
     jsonArrayFileDialongSettingsTmp.append(jsonObjectTmp);
     json_par["pathsDescription"] = "(this is not an actual configuration field) must be one or more objects";
     json_par["paths"] = jsonArrayFileDialongSettingsTmp;

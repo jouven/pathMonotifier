@@ -119,7 +119,7 @@ bool fileState_c::contentChanged_f() const
 
 bool fileState_c::sizeWasIncreasingAndStopped_f(const int_fast64_t cycleThreshold_par_con) const
 {
-    return cyclesWithoutSizeIncreasing >= cycleThreshold_par_con;
+    return cyclesWithoutSizeIncreasing >= cycleThreshold_par_con and currentFileSize_pri > 0;
 }
 
 bool fileState_c::newFileFinishedLoading_f(const int_fast64_t cycleThreshold_par_con) const
@@ -209,16 +209,18 @@ void fileState_c::copyCurrentToOld_f()
     oldFileSize_pri = currentFileSize_pri;
     oldLastModificationDatetimeMs_pri = currentLastModificationDatetimeMs_pri;
     oldIinitalized_pri = true;
-    firstCycle_pri = false;
 }
 
 fileState_c::fileState_c(
         const QString& filePath_par_con
+        , const bool firstCycle_par_con
         , const bool requiresHash_par_con
         )
     : filePath_pri(filePath_par_con)
+    , firstCycle_pri(firstCycle_par_con)
     , requiresHash_pri(requiresHash_par_con)
     , initialized_pri(true)
+
 {
     updateCurrentValues_f();
 }
@@ -241,7 +243,7 @@ pathMonitifierExecution_c::pathMonitifierExecution_c(QObject* parent_par, const 
     , pathConfigToMonitor_pri(pathConfigToMonitor_par_con)
 {}
 
-std::vector<pathConfig_c::changeToMonitor_ec> pathMonitifierExecution_c::anyChangeToReact_f(const fileState_c& fileStateObj_par_con) const
+std::vector<pathConfig_c::changeToMonitor_ec> pathMonitifierExecution_c::anyChangeToReact_f(const fileState_c& fileStateObj_par_con)
 {
     std::vector<pathConfig_c::changeToMonitor_ec> resultChangesTmp;
     for (const pathConfig_c::changeToMonitor_ec changeToMonitor_ite_con : pathConfigToMonitor_pri.changesToMonitor_f())
@@ -277,8 +279,49 @@ std::vector<pathConfig_c::changeToMonitor_ec> pathMonitifierExecution_c::anyChan
             if (changeToMonitor_ite_con == pathConfig_c::changeToMonitor_ec::newFileFinishedLoading
                 and fileStateObj_par_con.newFileFinishedLoading_f(pathConfigToMonitor_pri.sizeIncreaseCycleThreshold_f()))
             {
-                resultChangesTmp.emplace_back(pathConfig_c::changeToMonitor_ec::newFileFinishedLoading);
-                continue;
+                if (finishedLoading_pri.count(fileStateObj_par_con.filePath_f()))
+                {
+                     //if the file is "loading" again allow to be notified again
+                    if (fileStateObj_par_con.sizeChanged_f())
+                    {
+                        //remove it
+                        finishedLoading_pri.erase(fileStateObj_par_con.filePath_f());
+                    }
+                }
+                else
+                {
+                    resultChangesTmp.emplace_back(pathConfig_c::changeToMonitor_ec::newFileFinishedLoading);
+                    finishedLoading_pri.insert(fileStateObj_par_con.filePath_f());
+                    continue;
+                }
+            }
+
+            if (changeToMonitor_ite_con == pathConfig_c::changeToMonitor_ec::fileFinishedLoading
+                and fileStateObj_par_con.sizeWasIncreasingAndStopped_f(pathConfigToMonitor_pri.sizeIncreaseCycleThreshold_f()))
+            {
+                if (finishedLoading_pri.count(fileStateObj_par_con.filePath_f()))
+                {
+                    //if the file is "loading" again allow to be notified again
+                    if (fileStateObj_par_con.sizeChanged_f())
+                    {
+                        //remove it
+                        finishedLoading_pri.erase(fileStateObj_par_con.filePath_f());
+                    }
+                }
+                else
+                {
+                    resultChangesTmp.emplace_back(pathConfig_c::changeToMonitor_ec::fileFinishedLoading);
+                    finishedLoading_pri.insert(fileStateObj_par_con.filePath_f());
+                    continue;
+                }
+            }
+        }
+        else
+        {
+            //if it's the first cycle don't count existing files as finished loading
+            if (changeToMonitor_ite_con == pathConfig_c::changeToMonitor_ec::fileFinishedLoading)
+            {
+                finishedLoading_pri.insert(fileStateObj_par_con.filePath_f());
             }
         }
 
@@ -367,27 +410,35 @@ void pathMonitifierExecution_c::notify_f(
     {
         currentTimeStrTmp = QDateTime::currentDateTime().toString(pathConfigToMonitor_pri.dateTimeFormat_f());
     }
-    QString notificationLineTmp(currentTimeStrTmp + "\t" + fileState_par_con.filePath_f() + "\t" + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con));
+    QString filenameTmp(fileState_par_con.filePath_f());
+    filenameTmp.remove(0, pathConfigToMonitor_pri.path_f().size());
+    if (filenameTmp.startsWith('.'))
+    {
+    }
+    else
+    {
+        filenameTmp.prepend('.');
+    }
+
+    QString notificationLineTmp(currentTimeStrTmp + pathConfigToMonitor_pri.separator_f() + filenameTmp + pathConfigToMonitor_pri.separator_f() + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con));
     if (change_par_con == pathConfig_c::changeToMonitor_ec::modificationDateTimeChange)
     {
-        notificationLineTmp.append("\tNew: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.currentLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f())
-                                   + "\tOld: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.oldLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f()));
+        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.currentLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f())
+                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.oldLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f()));
     }
     if (change_par_con == pathConfig_c::changeToMonitor_ec::hashChange)
     {
-        notificationLineTmp.append("\tNew: " + QString::number(fileState_par_con.currentHash_f())
-                                   + "\tOld: " + QString::number(fileState_par_con.oldHash_f()));
+        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QString::number(fileState_par_con.currentHash_f())
+                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QString::number(fileState_par_con.oldHash_f()));
     }
     if (change_par_con == pathConfig_c::changeToMonitor_ec::fileSizeChange)
     {
-        notificationLineTmp.append("\tNew: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.currentFileSize_f())).remove(' ')
-                                   + "\tOld: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.oldFileSize_f())).remove(' '));
+        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.currentFileSize_f())).remove(' ')
+                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.oldFileSize_f())).remove(' '));
     }
     qtOutLine_f(notificationLineTmp);
     if (pathConfigToMonitor_pri.extraNotificationTypes_f().count(pathConfig_c::extraNotificationType_ec::bell) > 0)
     {
-        //TODO needs to be test on a non VM, since I have the bell muted in the VM
-        //TOOD test newFileFinishedLoading
         qtStdout_f() << '\a';
     }
     if (pathConfigToMonitor_pri.extraNotificationTypes_f().count(pathConfig_c::extraNotificationType_ec::runProcess) > 0 and processCounter_pri <= processCap_pri)
@@ -546,7 +597,7 @@ void pathMonitifierExecution_c::monitoringGatherFiles_f()
     {
         filterOptions_s filterOptionsTmp;
         filterOptionsTmp.navigateSubdirectories_pub = true;
-        filterOptionsTmp.useAbsolutePaths_pub = false;
+        filterOptionsTmp.useAbsolutePaths_pub = true;
         filterOptionsTmp.listFiles_pub = true;
         filterOptionsTmp.listHidden_pub = true;
         filterOptionsTmp.navigateHiddenDirectories_pub = true;
@@ -581,7 +632,7 @@ void pathMonitifierExecution_c::monitoringGatherFiles_f()
         }
         else
         {
-            monitoredFilesMap_pri.insert(filePath_ite_con, fileState_c(filePath_ite_con, hashRequired_pri));
+            monitoredFilesMap_pri.insert(filePath_ite_con, fileState_c(filePath_ite_con, firstCycle_pri, hashRequired_pri));
         }
     }
 

@@ -10,6 +10,7 @@
 #include <QProcess>
 
 #include <vector>
+#include <unordered_set>
 
 class fileState_c
 {
@@ -61,7 +62,8 @@ public:
     fileState_c() = default;
     fileState_c(
             const QString& filePath_par_con
-            , const bool requiresHash_par_con = false
+            , const bool firstCycle_par_con
+            , const bool requiresHash_par_con
     );
 
     void updateFileValues_f();
@@ -123,7 +125,9 @@ class pathMonitifierExecution_c : public QObject
     std::atomic_int_fast64_t processCounter_pri = 0;
     std::atomic_int_fast64_t processCap_pri = 4;
 
-    std::vector<pathConfig_c::changeToMonitor_ec> anyChangeToReact_f(const fileState_c& fileStateObj_par_con) const;
+    std::unordered_set<QString> finishedLoading_pri;
+
+    std::vector<pathConfig_c::changeToMonitor_ec> anyChangeToReact_f(const fileState_c& fileStateObj_par_con);
     void monitoringScheduler_f();
     void launchMonitoringGatherFilesThread_f();
     void executeReaction_f(const QString& monitoredFile_par_con);
