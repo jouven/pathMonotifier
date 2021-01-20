@@ -64,9 +64,14 @@ bool pathConfig_c::passNotificationTextAsArgument_f() const
     return passNotificationTextAsArgument_pri;
 }
 
-QString pathConfig_c::separator_f() const
+QString pathConfig_c::notififactionFieldSeparator_f() const
 {
-    return separator_pri;
+    return notificationFieldSeparator_pri;
+}
+
+bool pathConfig_c::useAbsolutePathsInNotifications_f() const
+{
+    return useAbsolutePathsInNotifications_pri;
 }
 
 pathConfig_c::pathConfig_c(
@@ -81,7 +86,8 @@ pathConfig_c::pathConfig_c(
         , const QString& dateTimeFormat_par_con
         , const bool UTC_par_con
         , const bool threadFileSystemScan_par_con
-        , const QString separator_par_con)
+        , const QString notificationFieldSeparator_par_con
+        , const bool useAbsolutePathsInNotifications_par_con)
     : path_pri(path_par_con)
     , monitorIntervalMilliseconds_pri(monitorIntervalMilliseconds_par_con)
     , changesToMonitor_pri(changesToMonitor_par_con)
@@ -93,7 +99,8 @@ pathConfig_c::pathConfig_c(
     , dateTimeFormat_pri(dateTimeFormat_par_con)
     , UTC_pri(UTC_par_con)
     , threadFileSystemScan_pri(threadFileSystemScan_par_con)
-    , separator_pri(separator_par_con)
+    , notificationFieldSeparator_pri(notificationFieldSeparator_par_con)
+    , useAbsolutePathsInNotifications_pri(useAbsolutePathsInNotifications_par_con)
 {}
 
 const QMap<QString, pathConfig_c::changeToMonitor_ec> pathConfig_c::strToChangeToMonitorMap_sta_con(
@@ -168,7 +175,8 @@ void pathConfig_c::read_f(const QJsonObject& json_par_con)
     dateTimeFormat_pri = json_par_con["dateTimeFormat"].toString(dateTimeFormat_pri);
     UTC_pri = json_par_con["UTC"].toBool(UTC_pri);
     threadFileSystemScan_pri = json_par_con["threadFileSystemScan"].toBool(threadFileSystemScan_pri);
-    separator_pri = json_par_con["separator"].toString(separator_pri);
+    notificationFieldSeparator_pri = json_par_con["notificationFieldSeparator"].toString(notificationFieldSeparator_pri);
+    useAbsolutePathsInNotifications_pri = json_par_con["useAbsolutePathsInNotifications"].toBool(useAbsolutePathsInNotifications_pri);
 }
 
 void pathConfig_c::writeJSONDocumented_f(QJsonObject& json_par)
@@ -203,7 +211,8 @@ void pathConfig_c::writeJSONDocumented_f(QJsonObject& json_par)
     json_par["dateTimeFormat"] = "see QDatetime::toString documentation" ", default is \"" + dateTimeFormat_pri + "\"";
     json_par["UTC"] = "true: show time in UTC, false: show in local" ", default is \"" + QSTRINGBOOL(UTC_pri) + "\"";
     json_par["threadFileSystemScan"] = "true: make an extra thread when scanning the filesystem, one extra per each pathConfig object being monitored, false: use the main thread" ", default is \"" + QSTRINGBOOL(threadFileSystemScan_pri) + "\"";
-    json_par["separator"] = QString("separator used between the \"notification\" fields" ", default is \"" + separator_pri + "\"");
+    json_par["notificationFieldSeparator"] = QString("separator used between the \"notification\" fields" ", default is \"" + notificationFieldSeparator_pri + "\"");
+    json_par["useAbsolutePathsInNotifications"] = "true: use absolute path to the path being monitored in notifications, false: use relative path to the monitored path in notifications";
 }
 
 bool pathConfig_c::isValid_f(textCompilation_c* errorsPtr_par) const
@@ -217,7 +226,7 @@ bool pathConfig_c::isValid_f(textCompilation_c* errorsPtr_par) const
     {
         if (path_pri.isEmpty())
         {
-            errorTexts.append_f({"Empty path"});
+            errorTexts.append_f("Empty path");
             break;
         }
 
@@ -265,7 +274,7 @@ bool pathConfig_c::isValid_f(textCompilation_c* errorsPtr_par) const
     {
         if (changesToMonitor_pri.size() < 1)
         {
-            errorTexts.append_f({"No changes to monitor"});
+            errorTexts.append_f("No changes to monitor");
             break;
         }
 

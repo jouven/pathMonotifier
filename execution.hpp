@@ -122,6 +122,10 @@ class pathMonitifierExecution_c : public QObject
 
     bool stopMonitoring_pri = false;
 
+    //used to shorten the path when notifying
+    QString absolutePathToMonitorForNotifications_pri;
+    QString pathToMonitorForNotifications_pri;
+
     std::atomic_int_fast64_t processCounter_pri = 0;
     std::atomic_int_fast64_t processCap_pri = 4;
 
@@ -142,7 +146,7 @@ Q_SIGNALS:
     void monitoringFinishedGatheringFiles_signal();
     void monitoringStopped_signal();
 
-private Q_SLOT:
+private Q_SLOTS:
     void monitoringGatherFiles_f();
     void monitoringReact_f();
     void monitoringCycleEnd_f();
@@ -151,7 +155,7 @@ private Q_SLOT:
     void readStderr_f();
     void readStdout_f();
     void readProcessState_f(QProcess::ProcessState newState_par);
-public Q_SLOT:
+public Q_SLOTS:
     void executeMonitoring_f();
     void stopMonitoring_f();
 };

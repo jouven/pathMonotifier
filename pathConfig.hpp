@@ -12,6 +12,9 @@ class textCompilation_c;
 
 class pathConfig_c
 {
+    //TODO? add a label field, in this class and JSON, to display in the notification so if several paths are being monitored it's easy to know which one
+    //is from the notification, right now there is the option to show the "absolute path to the path being monitored" but if the path being monitored is not absolute
+    //the paths in the notifications won't be either also "long paths" can be confusing argument
     QString path_pri;
     int_fast64_t monitorIntervalMilliseconds_pri = 1000;
 
@@ -62,7 +65,10 @@ private:
     //using it on >1 path configs happening on the same device will destroy that device performance while the scans happen and these scans will be slower
     //also factor in if hash change is required, because it forces full file readings to generate hash/s
     bool threadFileSystemScan_pri = false;
-    QString separator_pri = " | ";
+    QString notificationFieldSeparator_pri = " | ";
+    //absolute to the path being monitored, not full absolute, except if the monitored path is already in absolute form
+    //false is relative to th path being monitored
+    bool useAbsolutePathsInNotifications_pri = false;
 public:
     static const QMap<QString, changeToMonitor_ec> strToChangeToMonitorMap_sta_con;
     static const std::unordered_map<changeToMonitor_ec, QString> changeToMonitorToStrUMap_sta_con;
@@ -83,7 +89,8 @@ public:
             , const QString& dateTimeFormat_par_con
             , const bool UTC_par_con
             , const bool threadFileSystemScan_par_con
-            , const QString separator_par_con);
+            , const QString notificationFieldSeparator_par_con
+            , const bool useAbsolutePathsInNotifications_par_con);
 
     void read_f(const QJsonObject &json_par_con);
     //void write_f(QJsonObject &json_par) const;
@@ -104,7 +111,8 @@ public:
     bool UTC_f() const;
     bool threadFileSystemScan_f() const;
     bool passNotificationTextAsArgument_f() const;
-    QString separator_f() const;
+    QString notififactionFieldSeparator_f() const;
+    bool useAbsolutePathsInNotifications_f() const;
 };
 
 #endif // PATHMONOTIFIER_PATHCONFIG_HPP

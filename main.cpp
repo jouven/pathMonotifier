@@ -13,11 +13,11 @@ int main(int argc, char *argv[])
 {
     MACRO_signalHandler
 
-    QCoreApplication qtapp(argc, argv);
+    QCoreApplication qAppTmp(argc, argv);
     QCoreApplication::setApplicationName("Path monotifier");
     QCoreApplication::setApplicationVersion("1.0");
 
-    signalso::signalProxy_ptr_ext = new signalso::signalProxy_c(std::addressof(qtapp));
+    signalso::signalProxy_ptr_ext = new signalso::signalProxy_c(std::addressof(qAppTmp));
 
     appConfig_c appConfigTmp(nullptr);
     appConfig_ptr_ext = std::addressof(appConfigTmp);
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     if (appConfigTmp.configLoaded_f())
     {
         QTimer::singleShot(0, std::addressof(appConfigTmp), &appConfig_c::startMonitoringPaths_f);
-        qtapp.exec();
+        qAppTmp.exec();
     }
     else
     {

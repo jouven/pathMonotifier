@@ -238,7 +238,9 @@ void fileState_c::updateFileValues_f()
 #endif
 }
 
-pathMonitifierExecution_c::pathMonitifierExecution_c(QObject* parent_par, const pathConfig_c& pathConfigToMonitor_par_con)
+pathMonitifierExecution_c::pathMonitifierExecution_c(
+        QObject* parent_par
+        , const pathConfig_c& pathConfigToMonitor_par_con)
     : QObject(parent_par)
     , pathConfigToMonitor_pri(pathConfigToMonitor_par_con)
 {}
@@ -411,30 +413,27 @@ void pathMonitifierExecution_c::notify_f(
         currentTimeStrTmp = QDateTime::currentDateTime().toString(pathConfigToMonitor_pri.dateTimeFormat_f());
     }
     QString filenameTmp(fileState_par_con.filePath_f());
-    filenameTmp.remove(0, pathConfigToMonitor_pri.path_f().size());
-    if (filenameTmp.startsWith('.'))
+    filenameTmp.remove(0, absolutePathToMonitorForNotifications_pri.size());
+    if (pathConfigToMonitor_pri.useAbsolutePathsInNotifications_f())
     {
-    }
-    else
-    {
-        filenameTmp.prepend('.');
+        filenameTmp = pathToMonitorForNotifications_pri + filenameTmp;
     }
 
-    QString notificationLineTmp(currentTimeStrTmp + pathConfigToMonitor_pri.separator_f() + filenameTmp + pathConfigToMonitor_pri.separator_f() + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con));
+    QString notificationLineTmp(currentTimeStrTmp + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + filenameTmp + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con));
     if (change_par_con == pathConfig_c::changeToMonitor_ec::modificationDateTimeChange)
     {
-        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.currentLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f())
-                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.oldLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f()));
+        notificationLineTmp.append(pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "New: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.currentLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f())
+                                   + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "Old: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.oldLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f()));
     }
     if (change_par_con == pathConfig_c::changeToMonitor_ec::hashChange)
     {
-        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QString::number(fileState_par_con.currentHash_f())
-                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QString::number(fileState_par_con.oldHash_f()));
+        notificationLineTmp.append(pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "New: " + QString::number(fileState_par_con.currentHash_f())
+                                   + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "Old: " + QString::number(fileState_par_con.oldHash_f()));
     }
     if (change_par_con == pathConfig_c::changeToMonitor_ec::fileSizeChange)
     {
-        notificationLineTmp.append(pathConfigToMonitor_pri.separator_f() + "New: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.currentFileSize_f())).remove(' ')
-                                   + pathConfigToMonitor_pri.separator_f() + "Old: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.oldFileSize_f())).remove(' '));
+        notificationLineTmp.append(pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "New: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.currentFileSize_f())).remove(' ')
+                                   + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "Old: " + QString::fromStdString(formatByteSizeValue_f(fileState_par_con.oldFileSize_f())).remove(' '));
     }
     qtOutLine_f(notificationLineTmp);
     if (pathConfigToMonitor_pri.extraNotificationTypes_f().count(pathConfig_c::extraNotificationType_ec::bell) > 0)
@@ -638,9 +637,9 @@ void pathMonitifierExecution_c::monitoringGatherFiles_f()
 
     std::vector<QString> monitoredFilesTmp;
     monitoredFilesTmp.reserve(monitoredFilesMap_pri.size());
-    for (const QString& key_ite_con : monitoredFilesMap_pri.keys())
+    for (auto ite = monitoredFilesMap_pri.keyBegin(); ite not_eq monitoredFilesMap_pri.keyEnd(); ++ite)
     {
-        monitoredFilesTmp.emplace_back(key_ite_con);
+        monitoredFilesTmp.emplace_back(*ite);
     }
 //    if (not monitoredFiles_pri.empty())
 //    {
@@ -741,6 +740,21 @@ void pathMonitifierExecution_c::monitoringScheduler_f()
 void pathMonitifierExecution_c::executeMonitoring_f()
 {
     hashRequired_pri = pathConfigToMonitor_pri.changesToMonitor_f().count(pathConfig_c::changeToMonitor_ec::hashChange) == 1;
+
+    QFileInfo pathFileInfoTmp(pathConfigToMonitor_pri.path_f());
+    absolutePathToMonitorForNotifications_pri = pathFileInfoTmp.absoluteFilePath();
+    if (pathConfigToMonitor_pri.useAbsolutePathsInNotifications_f())
+    {
+        pathToMonitorForNotifications_pri = pathConfigToMonitor_pri.path_f();
+        if (pathToMonitorForNotifications_pri.endsWith('/'))
+        {
+            //nothing to do
+        }
+        else
+        {
+            pathToMonitorForNotifications_pri.append('/');
+        }
+    }
 
     QObject::connect(
                 this
