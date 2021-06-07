@@ -105,7 +105,7 @@ public:
 
 class directoryFilter_c;
 
-class pathMonitifierExecution_c : public QObject
+class folderChangeReactionActionExecution_c : public QObject
 {
     Q_OBJECT
 
@@ -139,7 +139,7 @@ class pathMonitifierExecution_c : public QObject
     void startProcess_f(QProcess* processPtr_par, const QString& argument_par_con);
     void decreaseProcessCounter_f();
 public:
-    explicit pathMonitifierExecution_c(QObject* parent_par, const pathConfig_c& pathConfigToMonitor_par_con);
+    explicit folderChangeReactionActionExecution_c(QObject* parent_par, const pathConfig_c& pathConfigToMonitor_par_con);
 
 Q_SIGNALS:
     void startMonitoring_signal();

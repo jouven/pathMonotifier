@@ -77,8 +77,8 @@ bool pathConfig_c::useAbsolutePathsInNotifications_f() const
 pathConfig_c::pathConfig_c(
         const QString& path_par_con
         , const int_fast64_t monitorIntervalMilliseconds_par_con
-        , const std::unordered_set<changeToMonitor_ec> changesToMonitor_par_con
-        , const std::unordered_set<extraNotificationType_ec> notificationTypes_par_con
+        , const std::unordered_set<changeToMonitor_ec>& changesToMonitor_par_con
+        , const std::unordered_set<extraNotificationType_ec>& notificationTypes_par_con
         , const int_fast64_t sizeIncreaseCycleThreshold_par_con
         , const int_fast64_t sizeDecreaseCycleThreshold_par_con
         , const QString& runProcessPath_par_con
@@ -86,7 +86,7 @@ pathConfig_c::pathConfig_c(
         , const QString& dateTimeFormat_par_con
         , const bool UTC_par_con
         , const bool threadFileSystemScan_par_con
-        , const QString notificationFieldSeparator_par_con
+        , const QString& notificationFieldSeparator_par_con
         , const bool useAbsolutePathsInNotifications_par_con)
     : path_pri(path_par_con)
     , monitorIntervalMilliseconds_pri(monitorIntervalMilliseconds_par_con)

@@ -238,14 +238,14 @@ void fileState_c::updateFileValues_f()
 #endif
 }
 
-pathMonitifierExecution_c::pathMonitifierExecution_c(
+folderChangeReactionActionExecution_c::folderChangeReactionActionExecution_c(
         QObject* parent_par
         , const pathConfig_c& pathConfigToMonitor_par_con)
     : QObject(parent_par)
     , pathConfigToMonitor_pri(pathConfigToMonitor_par_con)
 {}
 
-std::vector<pathConfig_c::changeToMonitor_ec> pathMonitifierExecution_c::anyChangeToReact_f(const fileState_c& fileStateObj_par_con)
+std::vector<pathConfig_c::changeToMonitor_ec> folderChangeReactionActionExecution_c::anyChangeToReact_f(const fileState_c& fileStateObj_par_con)
 {
     std::vector<pathConfig_c::changeToMonitor_ec> resultChangesTmp;
     for (const pathConfig_c::changeToMonitor_ec changeToMonitor_ite_con : pathConfigToMonitor_pri.changesToMonitor_f())
@@ -388,7 +388,7 @@ std::vector<pathConfig_c::changeToMonitor_ec> pathMonitifierExecution_c::anyChan
     return resultChangesTmp;
 }
 
-void pathMonitifierExecution_c::executeReaction_f(
+void folderChangeReactionActionExecution_c::executeReaction_f(
         const QString& monitoredFile_par_con)
 {
     fileState_c fileStateTmp(monitoredFilesMap_pri.value(monitoredFile_par_con));
@@ -399,7 +399,7 @@ void pathMonitifierExecution_c::executeReaction_f(
     }
 }
 
-void pathMonitifierExecution_c::notify_f(
+void folderChangeReactionActionExecution_c::notify_f(
         const fileState_c& fileState_par_con
         , const pathConfig_c::changeToMonitor_ec change_par_con)
 {
@@ -444,13 +444,13 @@ void pathMonitifierExecution_c::notify_f(
     {
         QProcess* runProcessTmp(new QProcess(this));
         //process writing the stderr doesn't trigger this
-        QObject::connect(runProcessTmp, &QProcess::errorOccurred, this, &pathMonitifierExecution_c::readError_f);
+        QObject::connect(runProcessTmp, &QProcess::errorOccurred, this, &folderChangeReactionActionExecution_c::readError_f);
         //QObject::connect(&runProcess_pri, &QProcess::started, this, &runProcessActionExecution_c::setStarted_f);
         //QObject::connect(runProcess_pri, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &pathMonitifierExecution_c::setFinished_f);
-        QObject::connect(runProcessTmp, &QProcess::readyReadStandardError, this, &pathMonitifierExecution_c::readStderr_f);
-        QObject::connect(runProcessTmp, &QProcess::readyReadStandardOutput, this, &pathMonitifierExecution_c::readStdout_f);
-        QObject::connect(runProcessTmp, &QProcess::stateChanged, this, &pathMonitifierExecution_c::readProcessState_f);
-        QObject::connect(runProcessTmp, &QProcess::finished, this, &pathMonitifierExecution_c::decreaseProcessCounter_f );
+        QObject::connect(runProcessTmp, &QProcess::readyReadStandardError, this, &folderChangeReactionActionExecution_c::readStderr_f);
+        QObject::connect(runProcessTmp, &QProcess::readyReadStandardOutput, this, &folderChangeReactionActionExecution_c::readStdout_f);
+        QObject::connect(runProcessTmp, &QProcess::stateChanged, this, &folderChangeReactionActionExecution_c::readProcessState_f);
+        QObject::connect(runProcessTmp, &QProcess::finished, this, &folderChangeReactionActionExecution_c::decreaseProcessCounter_f );
         QObject::connect(runProcessTmp, &QProcess::finished, runProcessTmp, &QProcess::deleteLater);
 
         processCounter_pri = processCounter_pri + 1;
@@ -458,12 +458,12 @@ void pathMonitifierExecution_c::notify_f(
     }
 }
 
-void pathMonitifierExecution_c::decreaseProcessCounter_f()
+void folderChangeReactionActionExecution_c::decreaseProcessCounter_f()
 {
     processCounter_pri = processCounter_pri - 1;
 }
 
-void pathMonitifierExecution_c::readError_f(QProcess::ProcessError error_par)
+void folderChangeReactionActionExecution_c::readError_f(QProcess::ProcessError error_par)
 {
     QProcess* processPtrTmp(static_cast<QProcess*>(this->sender()));
     //requires test, maybe the switch case isn't needed
@@ -489,7 +489,7 @@ void pathMonitifierExecution_c::readError_f(QProcess::ProcessError error_par)
         break;
         case QProcess::UnknownError:
         {
-            MACRO_ADDPATHMONOTIFIERLOG("QProcess::UnknownError", logItem_c::type_ec::warning);
+            MACRO_ADDLOG("QProcess::UnknownError", QString(), messageType_ec::warning);
             errorStrTmp.append(processPtrTmp->errorString());
         }
         break;
@@ -500,35 +500,40 @@ void pathMonitifierExecution_c::readError_f(QProcess::ProcessError error_par)
         }
     }
 
-    MACRO_ADDPATHMONOTIFIERLOG("runProcess error: " + errorStrTmp, logItem_c::type_ec::warning);
+    MACRO_ADDLOG({"runProcess error: {0}", errorStrTmp}, QString(), messageType_ec::warning);
     text_c errorTmp("runProcess callee error {0}", QSTRINGBOOL(calleeErrorTmp));
-    MACRO_ADDPATHMONOTIFIERLOG(errorTmp, logItem_c::type_ec::warning);
+    MACRO_ADDLOG(errorTmp, QString(), messageType_ec::warning);
 }
 
-void pathMonitifierExecution_c::readStderr_f()
+void folderChangeReactionActionExecution_c::readStderr_f()
 {
     QProcess* processPtrTmp(static_cast<QProcess*>(this->sender()));
-    QString stderrTmp("runProcess stderr: " + processPtrTmp->readAllStandardError());
-    MACRO_ADDPATHMONOTIFIERLOG(stderrTmp, logItem_c::type_ec::warning);
+    text_c stderrTmp("runProcess stderr: {0}", QString::fromUtf8(processPtrTmp->readAllStandardError()));
+    //never translate things coming outside of this program
+    stderrTmp.setTranslated_f(true);
+    MACRO_ADDLOG(stderrTmp, QString(), messageType_ec::warning);
 }
 
-void pathMonitifierExecution_c::readStdout_f()
+void folderChangeReactionActionExecution_c::readStdout_f()
 {
     QProcess* processPtrTmp(static_cast<QProcess*>(this->sender()));
-    QString stdoutTmp("runProcess stdout: " + processPtrTmp->readAllStandardOutput());
-    MACRO_ADDPATHMONOTIFIERLOG(stdoutTmp, logItem_c::type_ec::info);
+    text_c stdoutTmp("runProcess stdout: {0}", QString::fromUtf8(processPtrTmp->readAllStandardOutput()));
+    //never translate things coming outside of this program
+    stdoutTmp.setTranslated_f(true);
+    MACRO_ADDLOG(stdoutTmp, QString(), messageType_ec::information);
 }
 
-void pathMonitifierExecution_c::readProcessState_f(QProcess::ProcessState newState_par)
+void folderChangeReactionActionExecution_c::readProcessState_f(QProcess::ProcessState newState_par)
 {
 #ifdef DEBUGJOUVEN
     //qDebug() << "readProcessState_f newState_par" << newState_par;
 #endif
-    QString stdoutTmp("readProcessState_f newState_par: " + QVariant::fromValue(newState_par).toString());
-    MACRO_ADDPATHMONOTIFIERLOG(stdoutTmp, logItem_c::type_ec::info);
+    text_c stateStrTmp({"readProcessState_f newState_par: {0}", QVariant::fromValue(newState_par).toString()});
+    stateStrTmp.setTranslated_f(true);
+    MACRO_ADDLOG(stateStrTmp, QString(), messageType_ec::information);
 }
 
-void pathMonitifierExecution_c::startProcess_f(QProcess* processPtr_par, const QString& argument_par_con)
+void folderChangeReactionActionExecution_c::startProcess_f(QProcess* processPtr_par, const QString& argument_par_con)
 {
 #ifdef DEBUGJOUVEN
     //qDebug() << "runProcessActionExecution_c::execute_f()";
@@ -553,11 +558,11 @@ void pathMonitifierExecution_c::startProcess_f(QProcess* processPtr_par, const Q
     processPtr_par->start(pathConfigToMonitor_pri.runProcessPath_f(), {argument_par_con});
     {
         text_c logMessageTmp("Process {0} started", pathConfigToMonitor_pri.runProcessPath_f());
-        MACRO_ADDPATHMONOTIFIERLOG(logMessageTmp, logItem_c::type_ec::info);
+        MACRO_ADDLOG(logMessageTmp, QString(), messageType_ec::information);
     }
 }
 
-void pathMonitifierExecution_c::monitoringReact_f()
+void folderChangeReactionActionExecution_c::monitoringReact_f()
 {
     if (not stopMonitoring_pri)
     {
@@ -570,7 +575,7 @@ void pathMonitifierExecution_c::monitoringReact_f()
     monitoringCycleEnd_f();
 }
 
-void pathMonitifierExecution_c::monitoringCycleEnd_f()
+void folderChangeReactionActionExecution_c::monitoringCycleEnd_f()
 {
     //remove deleted files from monitoring
     for (const QString& itemToRemove_ite_con : monitoredFilesToRemove_pri)
@@ -581,7 +586,7 @@ void pathMonitifierExecution_c::monitoringCycleEnd_f()
     monitoringScheduler_f();
 }
 
-void pathMonitifierExecution_c::stopMonitoring_f()
+void folderChangeReactionActionExecution_c::stopMonitoring_f()
 {
     stopMonitoring_pri = true;
     if (directoryFilter_pri not_eq nullptr and directoryFilter_pri->currentState_f() == directoryFilter_c::state_ec::running)
@@ -590,7 +595,7 @@ void pathMonitifierExecution_c::stopMonitoring_f()
     }
 }
 
-void pathMonitifierExecution_c::monitoringGatherFiles_f()
+void folderChangeReactionActionExecution_c::monitoringGatherFiles_f()
 {
     if (directoryFilter_pri == nullptr)
     {
@@ -687,13 +692,13 @@ void pathMonitifierExecution_c::monitoringGatherFiles_f()
     Q_EMIT monitoringFinishedGatheringFiles_signal();
 }
 
-void pathMonitifierExecution_c::launchMonitoringGatherFilesThread_f()
+void folderChangeReactionActionExecution_c::launchMonitoringGatherFilesThread_f()
 {
     if (pathConfigToMonitor_pri.threadFileSystemScan_f())
     {
-        threadedFunction_c* threadedFunction_ptr(new threadedFunction_c(std::bind(&pathMonitifierExecution_c::monitoringGatherFiles_f, this), true));
+        threadedFunction_c* threadedFunction_ptr(new threadedFunction_c(std::bind(&folderChangeReactionActionExecution_c::monitoringGatherFiles_f, this), true));
         QObject::connect(threadedFunction_ptr, &threadedFunction_c::finished, threadedFunction_ptr, &threadedFunction_c::deleteLater);
-        QObject::connect(this, &pathMonitifierExecution_c::monitoringFinishedGatheringFiles_signal, threadedFunction_ptr, &threadedFunction_c::quit);
+        QObject::connect(this, &folderChangeReactionActionExecution_c::monitoringFinishedGatheringFiles_signal, threadedFunction_ptr, &threadedFunction_c::quit);
         threadedFunction_ptr->start();
     }
     else
@@ -702,7 +707,7 @@ void pathMonitifierExecution_c::launchMonitoringGatherFilesThread_f()
     }
 }
 
-void pathMonitifierExecution_c::monitoringScheduler_f()
+void folderChangeReactionActionExecution_c::monitoringScheduler_f()
 {
     if (stopMonitoring_pri)
     {
@@ -727,7 +732,7 @@ void pathMonitifierExecution_c::monitoringScheduler_f()
         //wait and then come back to the monitoring scheduler
         if (pathConfigToMonitor_pri.monitorIntervalMilliseconds_f() > timeDifferenceMsTmp)
         {
-            QTimer::singleShot(timeDifferenceMsTmp, this, &pathMonitifierExecution_c::monitoringScheduler_f);
+            QTimer::singleShot(timeDifferenceMsTmp, this, &folderChangeReactionActionExecution_c::monitoringScheduler_f);
         }
         else
         {
@@ -737,7 +742,7 @@ void pathMonitifierExecution_c::monitoringScheduler_f()
     }
 }
 
-void pathMonitifierExecution_c::executeMonitoring_f()
+void folderChangeReactionActionExecution_c::executeMonitoring_f()
 {
     hashRequired_pri = pathConfigToMonitor_pri.changesToMonitor_f().count(pathConfig_c::changeToMonitor_ec::hashChange) == 1;
 
@@ -758,9 +763,9 @@ void pathMonitifierExecution_c::executeMonitoring_f()
 
     QObject::connect(
                 this
-                , &pathMonitifierExecution_c::monitoringFinishedGatheringFiles_signal
+                , &folderChangeReactionActionExecution_c::monitoringFinishedGatheringFiles_signal
                 , this
-                , &pathMonitifierExecution_c::monitoringReact_f);
-    QTimer::singleShot(0, this, &pathMonitifierExecution_c::monitoringScheduler_f);
+                , &folderChangeReactionActionExecution_c::monitoringReact_f);
+    QTimer::singleShot(0, this, &folderChangeReactionActionExecution_c::monitoringScheduler_f);
 }
 

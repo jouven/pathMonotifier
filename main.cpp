@@ -1,35 +1,37 @@
 #include "appConfig.hpp"
 
-//#include "translatorJSONQtso/translator.hpp"
-
 #include "signalso/signal.hpp"
-#include "signalProxyQtso/signalProxyQtso.hpp"
 #include "essentialQtso/essentialQt.hpp"
 
+#ifdef DEBUGJOUVEN
+#ifndef Q_OS_WIN
+//this is to get pretty stacktrace when the execution crashes
+//instructions:
+//1 this only applies to program projects, libs don't need this (libs need debug, -gX flags when compiling)
+//2 link to -ldw or the elftutils library
+//3 set the DEFINES in the .pro BACKWARD_HAS_UNWIND BACKWARD_HAS_DW (check backward.hpp source for more info about the macros)
+//more info https://github.com/bombela/backward-cpp
+#include "backward-cpp/backward.hpp"
+namespace {
+backward::SignalHandling sh;
+}
+#endif
+#endif
+
 #include <QCoreApplication>
-#include <QTimer>
 
 int main(int argc, char *argv[])
 {
     MACRO_signalHandler
 
     QCoreApplication qAppTmp(argc, argv);
-    QCoreApplication::setApplicationName("Path monotifier");
-    QCoreApplication::setApplicationVersion("1.0");
-
-    signalso::signalProxy_ptr_ext = new signalso::signalProxy_c(std::addressof(qAppTmp));
 
     appConfig_c appConfigTmp(nullptr);
-    appConfig_ptr_ext = std::addressof(appConfigTmp);
 
-    if (appConfigTmp.configLoaded_f())
-    {
-        QTimer::singleShot(0, std::addressof(appConfigTmp), &appConfig_c::startMonitoringPaths_f);
-        qAppTmp.exec();
-    }
-    else
-    {
-        qtOutLine_f("Couldn't load any config file, pass \"-g\" argument to generate a config file documentation file");
-    }
-    qtOutLine_f("\n");
+    auto returnValue(qAppTmp.exec());
+
+    //stdout a new line before quitting otherwise shell line will be on top of the last printed line and it might look weird-wrong
+    qtStdout_f() << Qt::endl;
+    return returnValue;
 }
+
