@@ -9,6 +9,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
+QString pathConfig_c::label_f() const
+{
+    return label_pri;
+}
+
 QString pathConfig_c::path_f() const
 {
     return path_pri;
@@ -75,7 +80,8 @@ bool pathConfig_c::useAbsolutePathsInNotifications_f() const
 }
 
 pathConfig_c::pathConfig_c(
-        const QString& path_par_con
+        const QString &label_par_con
+        , const QString& path_par_con
         , const int_fast64_t monitorIntervalMilliseconds_par_con
         , const std::unordered_set<changeToMonitor_ec>& changesToMonitor_par_con
         , const std::unordered_set<extraNotificationType_ec>& notificationTypes_par_con
@@ -88,7 +94,8 @@ pathConfig_c::pathConfig_c(
         , const bool threadFileSystemScan_par_con
         , const QString& notificationFieldSeparator_par_con
         , const bool useAbsolutePathsInNotifications_par_con)
-    : path_pri(path_par_con)
+    : label_pri(label_par_con)
+    , path_pri(path_par_con)
     , monitorIntervalMilliseconds_pri(monitorIntervalMilliseconds_par_con)
     , changesToMonitor_pri(changesToMonitor_par_con)
     , extraNotificationTypes_pri(notificationTypes_par_con)
@@ -149,6 +156,7 @@ const std::unordered_map<pathConfig_c::extraNotificationType_ec, QString> pathCo
 
 void pathConfig_c::read_f(const QJsonObject& json_par_con)
 {
+    label_pri = json_par_con["label"].toString();
     path_pri = json_par_con["path"].toString();
     monitorIntervalMilliseconds_pri = json_par_con["monitorIntervalMilliseconds"].toString(QString::number(monitorIntervalMilliseconds_pri)).toLongLong();
     sizeIncreaseCycleThreshold_pri = json_par_con["sizeIncreaseCycleThreshold"].toString(QString::number(sizeIncreaseCycleThreshold_pri)).toLongLong();
@@ -181,6 +189,7 @@ void pathConfig_c::read_f(const QJsonObject& json_par_con)
 
 void pathConfig_c::writeJSONDocumented_f(QJsonObject& json_par)
 {
+    json_par["label"] = "label to describe the path being monitored";
     json_par["path"] = "a directory path, absolute or relative, to monitor";
     json_par["monitorIntervalMilliseconds"] = "interval in milliseconds, to check for filesystem changes in the path, this value is a number but the field is a string because json number limitations" ", default is \"" + QString::number(monitorIntervalMilliseconds_pri) + "\"";
     json_par["sizeIncreaseCycleThreshold"] = "how many cycles of monitorIntervalMilliseconds without a file size increasing to assume a file size stopped increasing, the reverse is used to assume it's increasing" ", default is \"" + QString::number(sizeIncreaseCycleThreshold_pri) + "\"";
@@ -321,3 +330,4 @@ bool pathConfig_c::isValid_f(textCompilation_c* errorsPtr_par) const
 
     return resultTmp;
 }
+

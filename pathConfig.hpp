@@ -12,9 +12,8 @@ class textCompilation_c;
 
 class pathConfig_c
 {
-    //TODO? add a label field, in this class and JSON, to display in the notification so if several paths are being monitored it's easy to know which one
-    //is from the notification, right now there is the option to show the "absolute path to the path being monitored" but if the path being monitored is not absolute
-    //the paths in the notifications won't be either also "long paths" can be confusing argument
+    //only works when useAbsolutePathsInNotifications_pri = false
+    QString label_pri;
     QString path_pri;
     int_fast64_t monitorIntervalMilliseconds_pri = 1000;
 
@@ -78,7 +77,8 @@ public:
 
     pathConfig_c() = default;
     pathConfig_c(
-            const QString& path_par_con
+            const QString& label_par_con
+            , const QString& path_par_con
             , const int_fast64_t monitorIntervalMilliseconds_par_con
             , const std::unordered_set<changeToMonitor_ec>& changesToMonitor_par_con
             , const std::unordered_set<extraNotificationType_ec>& notificationTypes_par_con
@@ -99,6 +99,7 @@ public:
     //pass errorsPtr_par argument to get the error texts
     bool isValid_f(textCompilation_c* errorsPtr_par = nullptr) const;
 
+    QString label_f() const;
     QString path_f() const;
     int_fast64_t monitorIntervalMilliseconds_f() const;
     std::unordered_set<changeToMonitor_ec> changesToMonitor_f() const;

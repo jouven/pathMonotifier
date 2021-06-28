@@ -419,7 +419,28 @@ void folderChangeReactionActionExecution_c::notify_f(
         filenameTmp = pathToMonitorForNotifications_pri + filenameTmp;
     }
 
-    QString notificationLineTmp(currentTimeStrTmp + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + filenameTmp + pathConfigToMonitor_pri.notififactionFieldSeparator_f() + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con));
+//    QString notificationLineTmp(
+//                currentTimeStrTmp
+//                + pathConfigToMonitor_pri.notififactionFieldSeparator_f()
+//                + filenameTmp
+//                + pathConfigToMonitor_pri.notififactionFieldSeparator_f()
+//                + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con)
+//    );
+    QString notificationLineTmp(currentTimeStrTmp);
+    if (not pathConfigToMonitor_pri.label_f().isEmpty())
+    {
+        notificationLineTmp.append(
+                    pathConfigToMonitor_pri.notififactionFieldSeparator_f()
+                    + pathConfigToMonitor_pri.label_f()
+        );
+    }
+    notificationLineTmp.append(
+                pathConfigToMonitor_pri.notififactionFieldSeparator_f()
+                + filenameTmp
+                + pathConfigToMonitor_pri.notififactionFieldSeparator_f()
+                + pathConfig_c::changeToMonitorToStrUMap_sta_con.at(change_par_con)
+    );
+
     if (change_par_con == pathConfig_c::changeToMonitor_ec::modificationDateTimeChange)
     {
         notificationLineTmp.append(pathConfigToMonitor_pri.notififactionFieldSeparator_f() + "New: " + QDateTime::fromMSecsSinceEpoch(fileState_par_con.currentLastModificationDatetimeMs_f()).toString(pathConfigToMonitor_pri.dateTimeFormat_f())

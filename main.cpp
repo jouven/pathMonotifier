@@ -3,6 +3,8 @@
 #include "signalso/signal.hpp"
 #include "essentialQtso/essentialQt.hpp"
 
+#include <QCoreApplication>
+
 #ifdef DEBUGJOUVEN
 #ifndef Q_OS_WIN
 //this is to get pretty stacktrace when the execution crashes
@@ -17,8 +19,6 @@ backward::SignalHandling sh;
 }
 #endif
 #endif
-
-#include <QCoreApplication>
 
 int main(int argc, char *argv[])
 {

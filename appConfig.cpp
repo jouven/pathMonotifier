@@ -102,6 +102,8 @@ void appConfig_c::derivedStart_f()
     tryLoadTranslations_f();
     loadLogging_f();
 
+    //this program only reads, it doesn't ever write (there is no saveConfigFile function inside derivedQuit_f()), the json config file,
+    //this class reads extra configuration from the json configuration file because the program wouldn't do anything otherwise
     if (configLoaded_f())
     {
         startMonitoringPaths_f();
