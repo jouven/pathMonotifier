@@ -1,4 +1,4 @@
-# pathMonotifier
+# pathMonotifierQt
 Console program to monitor a directory path and notify filesystem changes
 
 Compilation
